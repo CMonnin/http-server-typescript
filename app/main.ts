@@ -28,10 +28,10 @@ const server = net.createServer((socket) => {
     }
     if (path === "/") {
       statusCode = 200;
-      message = "OK" + CLRF + CLRF;
+      message = "OK";
     } else if (rootCheck && echo) {
       statusCode = 200;
-      message = "OK" + CLRF + CLRF;
+      message = "OK";
       response2 = aString.length;
     } else {
       statusCode = 404;
