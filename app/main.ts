@@ -16,6 +16,7 @@ const server = net.createServer((socket) => {
     const response1 = "text/plain";
     let response2 = 0;
     let rootCheck = false;
+    let fullReponse = true;
 
     // early retun if not string to send back
     if (!aString) {
@@ -35,7 +36,8 @@ const server = net.createServer((socket) => {
       response2 = aString.length;
     } else {
       statusCode = 404;
-      message = "Not Found" + CLRF + CLRF;
+      message = "Not Found";
+      fullReponse = false;
     }
 
     writeSocket(
