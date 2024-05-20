@@ -11,10 +11,10 @@ const server = net.createServer((socket) => {
 
     if (path === "/") {
       statusCode = 200;
-      message = " OK " + CLRF + CLRF;
+      message = "OK" + CLRF + CLRF;
     } else {
       statusCode = 404;
-      message = " Not Found " + CLRF + CLRF;
+      message = "Not Found" + CLRF + CLRF;
     }
 
     writeSocket(socket, statusCode, message);
