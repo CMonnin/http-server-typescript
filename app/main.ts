@@ -79,7 +79,7 @@ const writeSocket = (
       `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
     );
     console.log(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF} Headers ${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF} Response Body${aString}`,
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
     );
   }
 };
