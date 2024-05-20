@@ -38,6 +38,7 @@ const server = net.createServer((socket) => {
       statusCode = 404;
       message = "Not Found";
       fullReponse = false;
+      aString = path;
     }
 
     writeSocket(
@@ -88,8 +89,12 @@ const writeSocket = (
       );
     }
   } else {
-    socket.write(`HTTP/1.1 ${statusCode} ${message}${CLRF}`);
-    console.log(`HTTP/1.1 ${statusCode} ${message}${CLRF}`);
+    socket.write(
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+    );
+    console.log(
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+    );
   }
 };
 // You can use print statements as follows for debugging, they'll be visible when running tests.
