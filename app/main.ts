@@ -18,11 +18,6 @@ const server = net.createServer((socket) => {
     let rootCheck = false;
     let fullReponse = true;
 
-    // early retun if not string to send back
-    if (!aString) {
-      console.log("no string passed");
-      socket.end();
-    }
     // checking it's a good start to the address
     if (root === "") {
       rootCheck = true;
