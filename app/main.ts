@@ -32,13 +32,22 @@ const server = net.createServer((socket) => {
     } else if (rootCheck && echo) {
       statusCode = 200;
       message = "OK" + CLRF + CLRF;
-      response2 = aString.length
+      response2 = aString.length;
     } else {
       statusCode = 404;
       message = "Not Found" + CLRF + CLRF;
     }
 
-    writeSocket(socket, statusCode, message, header1, header2, response1, response2, aString);
+    writeSocket(
+      socket,
+      statusCode,
+      message,
+      header1,
+      header2,
+      response1,
+      response2,
+      aString,
+    );
     socket.end();
   });
 });
@@ -60,14 +69,19 @@ const writeSocket = (
   statusCode: number,
   message: string,
   header1: string,
-  header2: string, 
-  response1: string, 
+  header2: string,
+  response1: string,
   response2: number,
   aString: string,
 ) => {
   {
-      socket.write(`HTTP/1.1 ${statusCode} ${message}${CLRF} Headers ${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF} Response Body${aString}`);
-      console.log(`HTTP/1.1 ${statusCode} ${message}${CLRF} Headers ${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF} Response Body${aString}`);
+    socket.write(
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+    );
+    console.log(
+      `HTTP/1.1 ${statusCode} ${message}${CLRF} Headers ${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF} Response Body${aString}`,
+    );
+  }
 };
 // You can use print statements as follows for debugging, they'll be visible when running tests.
 console.log("Logs from your program will appear here!");
@@ -76,30 +90,3 @@ console.log("Logs from your program will appear here!");
 server.listen(4221, "localhost", () => {
   console.log("Server is running on port 4221");
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
