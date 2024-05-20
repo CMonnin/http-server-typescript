@@ -49,6 +49,7 @@ const server = net.createServer((socket) => {
       response1,
       response2,
       aString,
+      fullReponse,
     );
     socket.end();
   });
@@ -75,14 +76,20 @@ const writeSocket = (
   response1: string,
   response2: number,
   aString: string,
+  fullReponse: boolean,
 ) => {
-  {
-    socket.write(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
-    );
-    console.log(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
-    );
+  if (fullReponse) {
+    {
+      socket.write(
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+      );
+      console.log(
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+      );
+    }
+  } else {
+    socket.write(`HTTP/1.1 ${statusCode} ${message}${CLRF}`);
+    console.log(`HTTP/1.1 ${statusCode} ${message}${CLRF}`);
   }
 };
 // You can use print statements as follows for debugging, they'll be visible when running tests.
