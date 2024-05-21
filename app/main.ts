@@ -28,33 +28,28 @@ const server = net.createServer((socket) => {
     // path parsing
     let [root, echo, aString] = path.split("/");
 
-    let statusCode;
-    let message;
+    let statusCode = 404;
+    let message = "Not Found";
     const contentTypeHeader = "Content-Type";
     const contentLengthHeader = "Content-Length";
     const typeResponse = "text/plain";
     let lengthResponse = 0;
-    let rootCheck = false;
-    let fullReponse = true;
+    let fullReponse = false;
+
+    if (path.includes("/user-agent")) {
+    }
+    statusCode = 200;
+    message = "OK";
+    fullReponse = true;
+
+    if (path.includes("/echo")) {
+    }
+    statusCode = 200;
+    message = "OK";
+    lengthResponse = aString.length;
+    fullReponse = true;
 
     // checking it's a good start to the address
-    if (root === "") {
-      rootCheck = true;
-    }
-    if (path === "/") {
-      statusCode = 200;
-      message = "OK";
-    } else if (rootCheck && echo && aString) {
-      statusCode = 200;
-      message = "OK";
-      lengthResponse = aString.length;
-    } else {
-      statusCode = 404;
-      message = "Not Found";
-      fullReponse = false;
-      aString = path;
-    }
-
     writeSocket(
       socket,
       statusCode,
