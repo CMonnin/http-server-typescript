@@ -42,7 +42,7 @@ const server = net.createServer((socket) => {
     message = "OK";
     fullReponse = true;
 
-    if (endpoint === "echo") {
+    if (endpoint === "echo" && aString) {
     }
     statusCode = 200;
     message = "OK";
