@@ -6,15 +6,34 @@ const server = net.createServer((socket) => {
   socket.on("data", (data) => {
     // processing the incoming data
     let dataAsString = data.toString().split(CLRF);
+    // Request line
+    //GET
+    ///user-agent
+    //HTTP/1.1
+    //\r\n
     let [method, path, protocol] = dataAsString[0].split(" ");
+    // Headers
+    //Host: localhost:4221\r\n
+    //User-Agent: foobar/1.2.3\r\n  // Read this value
+    //Accept: */*\r\n
+    //\r\n
+    let userAgentResponse = "";
+    for (const line of dataAsString.slice(1)) {
+      let [header, info] = line.split(": ");
+      if (header === "User-Agent") {
+        userAgentResponse = info;
+      }
+    }
+
+    // path parsing
     let [root, echo, aString] = path.split("/");
 
     let statusCode;
     let message;
-    const header1 = "Content-Type";
-    const header2 = "Content-Length";
-    const response1 = "text/plain";
-    let response2 = 0;
+    const contentTypeHeader = "Content-Type";
+    const contentLengthHeader = "Content-Length";
+    const typeResponse = "text/plain";
+    let lengthResponse = 0;
     let rootCheck = false;
     let fullReponse = true;
 
@@ -28,7 +47,7 @@ const server = net.createServer((socket) => {
     } else if (rootCheck && echo && aString) {
       statusCode = 200;
       message = "OK";
-      response2 = aString.length;
+      lengthResponse = aString.length;
     } else {
       statusCode = 404;
       message = "Not Found";
@@ -40,11 +59,12 @@ const server = net.createServer((socket) => {
       socket,
       statusCode,
       message,
-      header1,
-      header2,
-      response1,
-      response2,
+      contentTypeHeader,
+      contentLengthHeader,
+      typeResponse,
+      lengthResponse,
       aString,
+      userAgentResponse,
       fullReponse,
     );
     socket.end();
@@ -52,43 +72,44 @@ const server = net.createServer((socket) => {
 });
 
 // Status line
-//HTTP/1.1 200 OK
-//\r\n                          // CRLF that marks the end of the status line
+//HTTP/1.1 200 OK               // Status code must be 200
+//\r\n
 
 // Headers
-//Content-Type: text/plain\r\n  // Header that specifies the format of the response body
-//Content-Length: 3\r\n         // Header that specifies the size of the response body, in bytes
-//\r\n                          // CRLF that marks the end of the headers
+//Content-Type: text/plain\r\n
+//Content-Length: 12\r\n
+//\r\n
 
 // Response body
-//abc
+//foobar/1.2.3                  // The value of `User-Agent`
 
 const writeSocket = (
   socket: net.Socket,
   statusCode: number,
   message: string,
-  header1: string,
-  header2: string,
-  response1: string,
-  response2: number,
+  contentTypeHeader: string,
+  contentLengthHeader: string,
+  typeResponse: string,
+  lengthResponse: number,
   aString: string,
+  userAgentResponse: string,
   fullReponse: boolean,
 ) => {
   if (fullReponse) {
     {
       socket.write(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
       );
       console.log(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
       );
     }
   } else {
     socket.write(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
     );
     console.log(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${header1}: ${response1}${CLRF}${header2}: ${response2}${CLRF}${CLRF}${aString}`,
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
     );
   }
 };
