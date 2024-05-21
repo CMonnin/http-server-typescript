@@ -17,7 +17,7 @@ const server = net.createServer((socket) => {
     //User-Agent: foobar/1.2.3\r\n  // Read this value
     //Accept: */*\r\n
     //\r\n
-    let userAgentResponse = "";
+    let userAgentResponse;
     for (const line of dataAsString.slice(1)) {
       let [header, info] = line.split(": ");
       if (header === "User-Agent") {
@@ -26,32 +26,40 @@ const server = net.createServer((socket) => {
     }
 
     // path parsing
-    let [root, endpoint, aString] = path.split("/");
-
-    let statusCode = 404;
-    let message = "Not Found";
+    console.log(`path: ${path}`);
+    let [root, endpoint, response] = path.split("/");
+    console.log(`response: ${response}`);
+    console.log(`root: ${root}`);
+    let statusCode;
+    let message;
     const contentTypeHeader = "Content-Type";
     const contentLengthHeader = "Content-Length";
     const typeResponse = "text/plain";
     let lengthResponse = 0;
     let fullReponse = false;
+    const definedEndpoints = ["echo", "user-agent"];
 
     if (endpoint === "user-agent") {
-    }
-    statusCode = 200;
-    message = "OK";
-    fullReponse = true;
-
-    if (endpoint === "echo" && aString) {
-    }
-    statusCode = 200;
-    message = "OK";
-    lengthResponse = aString.length;
-    fullReponse = true;
-    if (!endpoint && root === "/") {
       statusCode = 200;
       message = "OK";
       fullReponse = true;
+      response = userAgentResponse;
+      lengthResponse = response.length;
+    } else if (endpoint === "echo") {
+      statusCode = 200;
+      message = "OK";
+      console.log(`the word is ${response}`);
+      if (response) {
+        lengthResponse = response.length;
+      }
+      fullReponse = true;
+    } else if (path === "/") {
+      statusCode = 200;
+      message = "OK";
+      fullReponse = true;
+    } else {
+      statusCode = 404;
+      message = "Not Found";
     }
     // checking it's a good start to the address
     writeSocket(
@@ -62,8 +70,7 @@ const server = net.createServer((socket) => {
       contentLengthHeader,
       typeResponse,
       lengthResponse,
-      aString,
-      userAgentResponse,
+      response,
       fullReponse,
     );
     socket.end();
@@ -90,25 +97,24 @@ const writeSocket = (
   contentLengthHeader: string,
   typeResponse: string,
   lengthResponse: number,
-  aString: string,
-  userAgentResponse: string,
+  response: string,
   fullReponse: boolean,
 ) => {
   if (fullReponse) {
     {
       socket.write(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
       );
       console.log(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
       );
     }
   } else {
     socket.write(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
     );
     console.log(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${userAgentResponse}`,
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
     );
   }
 };
