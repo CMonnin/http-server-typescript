@@ -42,7 +42,7 @@ const server = net.createServer((socket) => {
     message = "OK";
     fullReponse = true;
 
-    if (path.includes("/echo")) {
+    if (echo) {
     }
     statusCode = 200;
     message = "OK";
