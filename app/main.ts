@@ -7,10 +7,15 @@ const server = net.createServer((socket) => {
   let accumulatedData = "";
   socket.on("data", async (data) => {
     let dataAsString = data.toString().split(CLRF);
+    console.log(dataAsString);
     let [method, path, protocol] = dataAsString[0].split(" ");
     console.log(`method: ${method}, path: ${path}, protocol: ${protocol}`);
     let userAgentResponse = "";
     let lengthResponse = 0;
+    let encodingHeader = dataAsString[2].split(": ");
+    console.log(encodingHeader);
+    let encodingType = String(encodingHeader.slice(1));
+    let acceptEncoding = true;
 
     for (const line of dataAsString.slice(1)) {
       let [header, info] = line.split(": ");
@@ -43,6 +48,21 @@ const server = net.createServer((socket) => {
       }
     }
 
+    if (endpoint === "echo" && acceptEncoding === true) {
+      lengthResponse = serverResponse.length;
+      if (encodingType === "invalid-encoding") {
+        socket.write(
+          `HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nContent-length: ${lengthResponse}\r\n\r\n${serverResponse}`,
+        );
+        socket.end();
+        return;
+      }
+      socket.write(
+        `HTTP/1.1 200 OK\r\nContent-encoding: ${encodingType}\r\nContent-type: text/plain\r\nContent-length: ${lengthResponse}\r\n\r\n${serverResponse}`,
+      );
+      socket.end();
+      return;
+    }
     if (endpoint === "echo") {
       lengthResponse = serverResponse.length;
       socket.write(
@@ -51,7 +71,6 @@ const server = net.createServer((socket) => {
       socket.end();
       return;
     }
-
     if (endpoint === "user-agent") {
       socket.write(
         `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${userAgentResponse.length}\r\n\r\n${userAgentResponse}`,
