@@ -1,22 +1,13 @@
 import * as net from "net";
+import fetch from "node-fetch";
 
 const CLRF = "\r\n";
 
 const server = net.createServer((socket) => {
-  socket.on("data", (data) => {
-    // processing the incoming data
+  socket.on("data", async (data) => {
     let dataAsString = data.toString().split(CLRF);
-    // Request line
-    //GET
-    ///user-agent
-    //HTTP/1.1
-    //\r\n
     let [method, path, protocol] = dataAsString[0].split(" ");
-    // Headers
-    //Host: localhost:4221\r\n
-    //User-Agent: foobar/1.2.3\r\n  // Read this value
-    //Accept: */*\r\n
-    //\r\n
+
     let userAgentResponse;
     for (const line of dataAsString.slice(1)) {
       let [header, info] = line.split(": ");
@@ -25,41 +16,46 @@ const server = net.createServer((socket) => {
       }
     }
 
-    // path parsing
-    console.log(`path: ${path}`);
-    let [root, endpoint, response] = path.split("/");
-    console.log(`response: ${response}`);
-    console.log(`root: ${root}`);
-    let statusCode;
-    let message;
+    let statusCode = 200;
+    let message = "OK";
+    let typeResponse = "text/plain";
+    let lengthResponse = 0;
     const contentTypeHeader = "Content-Type";
     const contentLengthHeader = "Content-Length";
-    const typeResponse = "text/plain";
-    let lengthResponse = 0;
-    let fullReponse = false;
-    const definedEndpoints = ["echo", "user-agent"];
+    let fullReponse = true;
+    let [root, endpoint, serverResponse] = path.split("/");
+    console.log(`endpoint ${endpoint}`);
+    console.log(`serverResponse ${serverResponse}`);
 
-    if (endpoint === "user-agent") {
-      statusCode = 200;
-      message = "OK";
-      fullReponse = true;
-      response = userAgentResponse;
-      lengthResponse = response.length;
-    } else if (endpoint === "echo") {
-      statusCode = 200;
-      message = "OK";
-      console.log(`the word is ${response}`);
-      if (response) {
-        lengthResponse = response.length;
+    const fileExists = await fileExistsChecker(urlCreator(path));
+    if (fileExists) {
+      console.log(fileExists);
+      if (endpoint === "user-agent") {
+        serverResponse = userAgentResponse;
+        lengthResponse = serverResponse.length;
+      } else if (endpoint === "echo") {
+        serverResponse = serverResponse;
+        lengthResponse = serverResponse.length;
+      } else if (endpoint === "files") {
+        typeResponse = "application/octet-stream";
+        if (fileExists) {
+          console.log("fileExists");
+          serverResponse = "File exists";
+        } else {
+          statusCode = 404;
+          message = "Not Found";
+          serverResponse = "File not found";
+        }
+        lengthResponse = serverResponse.length;
+      } else if (path === "/") {
+        serverResponse = "Hello, World!";
+        lengthResponse = serverResponse.length;
+      } else {
+        statusCode = 404;
+        message = "Not Found";
+        serverResponse = "Not Found";
+        lengthResponse = serverResponse.length;
       }
-      fullReponse = true;
-    } else if (path === "/") {
-      statusCode = 200;
-      message = "OK";
-      fullReponse = true;
-    } else {
-      statusCode = 404;
-      message = "Not Found";
     }
     // checking it's a good start to the address
     writeSocket(
@@ -70,7 +66,7 @@ const server = net.createServer((socket) => {
       contentLengthHeader,
       typeResponse,
       lengthResponse,
-      response,
+      serverResponse,
       fullReponse,
     );
     socket.end();
@@ -88,7 +84,6 @@ const server = net.createServer((socket) => {
 
 // Response body
 //foobar/1.2.3                  // The value of `User-Agent`
-
 const writeSocket = (
   socket: net.Socket,
   statusCode: number,
@@ -97,31 +92,47 @@ const writeSocket = (
   contentLengthHeader: string,
   typeResponse: string,
   lengthResponse: number,
-  response: string,
+  serverResponse: string,
   fullReponse: boolean,
 ) => {
   if (fullReponse) {
     {
       socket.write(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${serverResponse}`,
       );
       console.log(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
+        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${
+          serverResponse
+        }`,
       );
     }
   } else {
     socket.write(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${serverResponse}`,
     );
     console.log(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${response}`,
+      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${serverResponse}`,
     );
   }
 };
-// You can use print statements as follows for debugging, they'll be visible when running tests.
+const fileExistsChecker = async (url: string) => {
+  try {
+    const response = await fetch(url, { method: "HEAD" });
+    console.log("are you still awaiting? were done");
+    return response.ok;
+  } catch (error) {
+    console.error(`Error:`, error);
+    return false;
+  }
+};
+
+const urlCreator = (path: string) => {
+  const toPrepend = "http://localhost:4221";
+  return toPrepend + path;
+};
+
 console.log("Logs from your program will appear here!");
 
-// Uncomment this to pass the first stage
 server.listen(4221, "localhost", () => {
   console.log("Server is running on port 4221");
 });
