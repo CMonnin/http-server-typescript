@@ -26,11 +26,16 @@ const server = net.createServer((socket) => {
 
     if (method === "POST" && endpoint === "files") {
       accumulatedData += data;
+      let fileBody = accumulatedData.split(CLRF);
+      fileBody = fileBody[fileBody.length - 1];
       const [_, __, filename] = path.split("/");
-      const filePath = "/" + filename;
+      const args = process.argv.slice(2);
+      const [___, absPath] = args;
+      const filePath = absPath + "/" + filename;
+
       try {
-        fs.writeFileSync(filePath, accumulatedData);
-        socket.write(`HTTP/1.1 201 OK\r\nCreated`);
+        fs.writeFileSync(filePath, fileBody);
+        socket.write(`HTTP/1.1 201 Created\r\n\r\n`);
         socket.end();
         return;
       } catch (err) {
