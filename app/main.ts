@@ -4,11 +4,14 @@ import fs from "node:fs";
 const CLRF = "\r\n";
 
 const server = net.createServer((socket) => {
+  let accumulatedData = "";
   socket.on("data", async (data) => {
     let dataAsString = data.toString().split(CLRF);
     let [method, path, protocol] = dataAsString[0].split(" ");
+    console.log(`method: ${method}, path: ${path}, protocol: ${protocol}`);
+    let userAgentResponse = "";
+    let lengthResponse = 0;
 
-    let userAgentResponse;
     for (const line of dataAsString.slice(1)) {
       let [header, info] = line.split(": ");
       if (header === "User-Agent") {
@@ -16,10 +19,24 @@ const server = net.createServer((socket) => {
       }
     }
 
-    let lengthResponse = 0;
     let [root, endpoint, serverResponse] = path.split("/");
-    console.log(`endpoint ${endpoint}`);
-    console.log(`serverResponse ${serverResponse}`);
+    console.log(
+      `root: ${root}, endpoint: ${endpoint}, serverResponse ${serverResponse}`,
+    );
+
+    if (method === "POST" && endpoint === "files") {
+      accumulatedData += data;
+      const [_, __, filename] = path.split("/");
+      const filePath = "/" + filename;
+      try {
+        fs.writeFileSync(filePath, accumulatedData);
+        socket.write(`HTTP/1.1 201 OK\r\nCreated`);
+        socket.end();
+        return;
+      } catch (err) {
+        console.log(err);
+      }
+    }
 
     if (endpoint === "echo") {
       lengthResponse = serverResponse.length;
