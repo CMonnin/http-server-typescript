@@ -1,5 +1,5 @@
 import * as net from "net";
-import fetch from "node-fetch";
+import fs from "node:fs";
 
 const CLRF = "\r\n";
 
@@ -16,120 +16,61 @@ const server = net.createServer((socket) => {
       }
     }
 
-    let statusCode = 200;
-    let message = "OK";
-    let typeResponse = "text/plain";
     let lengthResponse = 0;
-    const contentTypeHeader = "Content-Type";
-    const contentLengthHeader = "Content-Length";
-    let fullReponse = true;
     let [root, endpoint, serverResponse] = path.split("/");
     console.log(`endpoint ${endpoint}`);
     console.log(`serverResponse ${serverResponse}`);
 
-    const fileExists = await fileExistsChecker(urlCreator(path));
-    if (fileExists) {
-      console.log(fileExists);
-      if (endpoint === "user-agent") {
-        serverResponse = userAgentResponse;
-        lengthResponse = serverResponse.length;
-      } else if (endpoint === "echo") {
-        serverResponse = serverResponse;
-        lengthResponse = serverResponse.length;
-      } else if (endpoint === "files") {
-        typeResponse = "application/octet-stream";
-        if (fileExists) {
-          console.log("fileExists");
-          serverResponse = "File exists";
-        } else {
-          statusCode = 404;
-          message = "Not Found";
-          serverResponse = "File not found";
-        }
-        lengthResponse = serverResponse.length;
-      } else if (path === "/") {
-        serverResponse = "Hello, World!";
-        lengthResponse = serverResponse.length;
-      } else {
-        statusCode = 404;
-        message = "Not Found";
-        serverResponse = "Not Found";
-        lengthResponse = serverResponse.length;
-      }
+    if (endpoint === "echo") {
+      lengthResponse = serverResponse.length;
+      socket.write(
+        `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${lengthResponse}\r\n\r\n${serverResponse}`,
+      );
+      socket.end();
+      return;
     }
-    // checking it's a good start to the address
-    writeSocket(
-      socket,
-      statusCode,
-      message,
-      contentTypeHeader,
-      contentLengthHeader,
-      typeResponse,
-      lengthResponse,
-      serverResponse,
-      fullReponse,
-    );
+
+    if (endpoint === "user-agent") {
+      socket.write(
+        `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${userAgentResponse.length}\r\n\r\n${userAgentResponse}`,
+      );
+      socket.end();
+      return;
+    }
+
+    if (endpoint === "files") {
+      const [_, __, filename] = path.split("/");
+      const args = process.argv.slice(2);
+      const [___, absPath] = args;
+      const filePath = absPath + "/" + filename;
+
+      try {
+        const content = fs.readFileSync(filePath);
+        socket.write(
+          `HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${content.length}\r\n\r\n${content}`,
+        );
+      } catch (error) {
+        socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+      }
+
+      socket.end();
+      return;
+    }
+
+    if (path === "/") {
+      serverResponse = "Hello, World!";
+      lengthResponse = serverResponse.length;
+      socket.write(
+        `HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${lengthResponse}\r\n\r\n${serverResponse}`,
+      );
+      socket.end();
+      return;
+    }
+
+    socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
     socket.end();
   });
 });
-
-// Status line
-//HTTP/1.1 200 OK               // Status code must be 200
-//\r\n
-
-// Headers
-//Content-Type: text/plain\r\n
-//Content-Length: 12\r\n
-//\r\n
-
-// Response body
-//foobar/1.2.3                  // The value of `User-Agent`
-const writeSocket = (
-  socket: net.Socket,
-  statusCode: number,
-  message: string,
-  contentTypeHeader: string,
-  contentLengthHeader: string,
-  typeResponse: string,
-  lengthResponse: number,
-  serverResponse: string,
-  fullReponse: boolean,
-) => {
-  if (fullReponse) {
-    {
-      socket.write(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${serverResponse}`,
-      );
-      console.log(
-        `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${
-          serverResponse
-        }`,
-      );
-    }
-  } else {
-    socket.write(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${serverResponse}`,
-    );
-    console.log(
-      `HTTP/1.1 ${statusCode} ${message}${CLRF}${contentTypeHeader}: ${typeResponse}${CLRF}${contentLengthHeader}: ${lengthResponse}${CLRF}${CLRF}${serverResponse}`,
-    );
-  }
-};
-const fileExistsChecker = async (url: string) => {
-  try {
-    const response = await fetch(url, { method: "HEAD" });
-    console.log("are you still awaiting? were done");
-    return response.ok;
-  } catch (error) {
-    console.error(`Error:`, error);
-    return false;
-  }
-};
-
-const urlCreator = (path: string) => {
-  const toPrepend = "http://localhost:4221";
-  return toPrepend + path;
-};
 
 console.log("Logs from your program will appear here!");
 
