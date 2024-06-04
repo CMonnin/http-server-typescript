@@ -1,6 +1,8 @@
 import { assert } from "console";
 import * as net from "net";
 import fs from "node:fs";
+import { createGzip, gzipSync } from "zlib";
+import { pipeline } from "stream";
 
 const CLRF = "\r\n";
 
@@ -56,9 +58,11 @@ const server = net.createServer((socket) => {
     if (endpoint === "echo" && acceptEncoding === true && encodingType) {
       lengthResponse = serverResponse.length;
       if (encodingType.includes("gzip")) {
+        const compresssdEcho = gzipSync(serverResponse.trim());
         socket.write(
-          `HTTP/1.1 200 OK\r\nContent-encoding: gzip\r\nContent-type: text/plain\r\nContent-length: ${lengthResponse}\r\n\r\n${serverResponse}`,
+          `HTTP/1.1 200 OK\r\nContent-encoding: gzip\r\nContent-type: text/plain\r\nContent-length: ${compresssdEcho.length}\r\n\r\n`,
         );
+        socket.write(compresssdEcho);
         socket.end();
         return;
       }
