@@ -1,3 +1,4 @@
+import { assert } from "console";
 import * as net from "net";
 import fs from "node:fs";
 
@@ -14,7 +15,11 @@ const server = net.createServer((socket) => {
     let lengthResponse = 0;
     let encodingHeader = dataAsString[2].split(": ");
     console.log(encodingHeader);
-    let encodingType = String(encodingHeader.slice(1));
+    let encodingType = encodingHeader.slice(1)[0];
+    if (encodingType) {
+      encodingType = encodingType.split(", ");
+    }
+    console.log(encodingType);
     let acceptEncoding = true;
 
     for (const line of dataAsString.slice(1)) {
@@ -48,17 +53,17 @@ const server = net.createServer((socket) => {
       }
     }
 
-    if (endpoint === "echo" && acceptEncoding === true) {
+    if (endpoint === "echo" && acceptEncoding === true && encodingType) {
       lengthResponse = serverResponse.length;
-      if (encodingType === "invalid-encoding") {
+      if (encodingType.includes("gzip")) {
         socket.write(
-          `HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nContent-length: ${lengthResponse}\r\n\r\n${serverResponse}`,
+          `HTTP/1.1 200 OK\r\nContent-encoding: gzip\r\nContent-type: text/plain\r\nContent-length: ${lengthResponse}\r\n\r\n${serverResponse}`,
         );
         socket.end();
         return;
       }
       socket.write(
-        `HTTP/1.1 200 OK\r\nContent-encoding: ${encodingType}\r\nContent-type: text/plain\r\nContent-length: ${lengthResponse}\r\n\r\n${serverResponse}`,
+        `HTTP/1.1 200 OK\r\nContent-type: text/plain\r\nContent-length: ${lengthResponse}\r\n\r\n${serverResponse}`,
       );
       socket.end();
       return;
